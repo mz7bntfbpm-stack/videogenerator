@@ -11,6 +11,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { Timeline } from '@/components/ui/Timeline';
+import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { getCurrentStoryboard, setCurrentStoryboard } from '@/lib/storyboardStore';
 import { useToast } from '@/lib/toast';
 import { useState, useEffect } from 'react';
@@ -502,6 +503,15 @@ export default function DashboardPage() {
               </div>
               {/* Timeline details */}
               <div className="mt-2 text-sm text-slate-600">Total: {filteredScenes.reduce((a, s) => a + s.duration, 0)}s</div>
+            </div>
+
+            {/* Video Preview - quick playback of a sample video */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Video Preview</h2>
+              <VideoPlayer
+                src="https://www.w3schools.com/html/mov_bbb.mp4"
+                poster="https://dummyimage.com/640x360/111/fff.png&text=Preview"
+              />
             </div>
               {scenes.length === 0 ? (
                 <p className="text-sm text-slate-600">No scenes yet. Add scenes to outline your video structure.</p>
