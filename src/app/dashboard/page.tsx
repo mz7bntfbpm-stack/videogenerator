@@ -230,7 +230,18 @@ export default function DashboardPage() {
       case 'openUsage': window.location.href = '/usage'; break;
       case 'openAccount': window.location.href = '/account'; break;
       case 'exportPack': exportPack(); break;
-      case 'exportPromptBundle': { const bundle = mockApi.generatePromptBundle([]); /* placeholder */ break; }
+      case 'exportPromptBundle': {
+        const scenesForBundle = scenes.map((s) => ({ sceneTitle: s.title || s.id, prompt: s.prompt, duration: s.duration }));
+        mockApi.generatePromptBundle(scenes).then((bundle) => {
+          const payload = { bundleName: bundle.bundleName, items: bundle.items };
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = bundle.bundleName + '.json';
+          document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        });
+        break;
+      }
       case 'publishAll': publishAllFromPalette(); break;
       case 'createVideo': {
         // Pre-fill a sample video form
