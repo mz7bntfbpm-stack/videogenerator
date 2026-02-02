@@ -25,6 +25,8 @@ const CATEGORIES = {
 };
 
 const COMMANDS: Cmd[] = [
+  { id: 'undo', label: 'Undo', description: 'Undo last action', category: CATEGORIES.GENERAL, shortcut: '⌘Z' },
+  { id: 'redo', label: 'Redo', description: 'Redo last undone action', category: CATEGORIES.GENERAL, shortcut: '⌘⇧Z' },
   { id: 'createVideo', label: 'Create Video', description: 'Start a new video generation', category: CATEGORIES.GENERAL, shortcut: '⌘C' },
   { id: 'openMyVideos', label: 'My Videos', description: 'Open video library', category: CATEGORIES.NAVIGATION, shortcut: '⌘G V' },
   { id: 'openTemplates', label: 'Templates', description: 'Open templates', category: CATEGORIES.NAVIGATION, shortcut: '⌘G T' },

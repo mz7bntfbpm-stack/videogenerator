@@ -115,6 +115,52 @@ export default function DashboardPage() {
   const [timelineResizing, setTimelineResizing] = useState<{ id: string; initialDuration: number; startX: number } | null>(null);
   const [draggedSceneId, setDraggedSceneId] = useState<string | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [sceneSearchQuery, setSceneSearchQuery] = useState('');
+  
+  // Undo/Redo state
+  const [history, setHistory] = useState<Scene[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  const maxHistorySize = 50;
+  
+  // Filtered scenes based on search
+  const filteredScenes = useMemo(() => {
+    if (!sceneSearchQuery) return scenes;
+    const query = sceneSearchQuery.toLowerCase();
+    return scenes.filter(s => 
+      s.title?.toLowerCase().includes(query) || 
+      s.prompt?.toLowerCase().includes(query)
+    );
+  }, [scenes, sceneSearchQuery]);
+  
+  const addToHistory = (newScenes: Scene[]) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(newScenes);
+      if (newHistory.length > maxHistorySize) {
+        newHistory.shift();
+      }
+      return newHistory;
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, maxHistorySize - 1));
+  };
+  
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+      setScenes(history[historyIndex - 1]);
+    }
+  };
+  
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+      setScenes(history[historyIndex + 1]);
+    }
+  };
+  
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
   
   const addScene = () => {
     const s: Scene = {
@@ -124,12 +170,16 @@ export default function DashboardPage() {
       duration: 5,
       transition: 'Fade',
     };
-    setScenes(prev => [...prev, s]);
+    const newScenes = [...scenes, s];
+    addToHistory(newScenes);
+    setScenes(newScenes);
     setSelectedSceneId(s.id);
   };
   
   const deleteScene = (id: string) => {
-    setScenes(prev => prev.filter(s => s.id !== id));
+    const newScenes = scenes.filter(s => s.id !== id);
+    addToHistory(newScenes);
+    setScenes(newScenes);
     if (selectedSceneId === id) setSelectedSceneId(null);
   };
   
@@ -142,17 +192,22 @@ export default function DashboardPage() {
       id: 'scene-' + Date.now(),
       title: sceneToDuplicate.title ? sceneToDuplicate.title + ' (Copy)' : '',
     };
-    setScenes(prev => [...prev.slice(0, index + 1), newScene, ...prev.slice(index + 1)]);
+    const newScenes = [...scenes.slice(0, index + 1), newScene, ...scenes.slice(index + 1)];
+    addToHistory(newScenes);
+    setScenes(newScenes);
   };
   
   const updateScene = (id: string, patch: Partial<Scene>) => {
-    setScenes(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+    const newScenes = scenes.map(s => s.id === id ? { ...s, ...patch } : s);
+    addToHistory(newScenes);
+    setScenes(newScenes);
   };
   
   const moveScene = (fromIndex: number, toIndex: number) => {
     const newScenes = [...scenes];
     const [removed] = newScenes.splice(fromIndex, 1);
     newScenes.splice(toIndex, 0, removed);
+    addToHistory(newScenes);
     setScenes(newScenes);
   };
   
@@ -181,7 +236,10 @@ export default function DashboardPage() {
       setScenes((prev) => prev.map((s) => (s.id === timelineResizing.id ? { ...s, duration: newDuration } : s)));
     };
     const onUp = () => {
-      if (timelineResizing) setTimelineResizing(null);
+      if (timelineResizing) {
+        addToHistory(scenes);
+        setTimelineResizing(null);
+      }
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
@@ -207,12 +265,16 @@ export default function DashboardPage() {
       setFormData({ title: 'Palette Video', prompt: 'Describe your video from palette', styleId: 'clean-motion', aspectRatio: '16:9', duration: 30 });
       showToast('Form pre-filled', 'success');
     };
+    const handleUndo = () => undo();
+    const handleRedo = () => redo();
 
     window.addEventListener('vg-palette-add-scene', handleAddScene);
     window.addEventListener('vg-palette-delete-scene', handleDeleteScene);
     window.addEventListener('vg-palette-duplicate-scene', handleDuplicateScene);
     window.addEventListener('vg-palette-auto-generate', handleAutoGenerate);
     window.addEventListener('vg-palette-create-video', handleCreateVideo);
+    window.addEventListener('vg-palette-undo', handleUndo);
+    window.addEventListener('vg-palette-redo', handleRedo);
 
     return () => {
       window.removeEventListener('vg-palette-add-scene', handleAddScene);
@@ -220,6 +282,8 @@ export default function DashboardPage() {
       window.removeEventListener('vg-palette-duplicate-scene', handleDuplicateScene);
       window.removeEventListener('vg-palette-auto-generate', handleAutoGenerate);
       window.removeEventListener('vg-palette-create-video', handleCreateVideo);
+      window.removeEventListener('vg-palette-undo', handleUndo);
+      window.removeEventListener('vg-palette-redo', handleRedo);
     };
   }, [selectedSceneId]);
 
@@ -393,13 +457,28 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Storyboard Timeline</h2>
                 <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={redo} disabled={!canRedo} title="Redo (⌘⇧Z)">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" /></svg>
+                  </Button>
                   <Button onClick={addScene}>Add Scene</Button>
                   <Button variant="secondary" onClick={onAutoGenerate}>Auto-Generate</Button>
                 </div>
               </div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search scenes by title or prompt..."
+                  value={sceneSearchQuery}
+                  onChange={(e) => setSceneSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
               <div className="timeline" style={{ overflowX: 'auto' }} aria-label="Storyboard timeline">
                 <div style={{ display: 'flex', alignItems: 'stretch', height: 40 }}>
-                  {scenes.map((scene) => {
+                  {filteredScenes.map((scene) => {
                     const width = Math.max(30, scene.duration * 14);
                     return (
                       <div
@@ -422,39 +501,42 @@ export default function DashboardPage() {
                 </div>
               </div>
               {/* Timeline details */}
-              <div className="mt-2 text-sm text-slate-600">Total: {scenes.reduce((a, s) => a + s.duration, 0)}s</div>
+              <div className="mt-2 text-sm text-slate-600">Total: {filteredScenes.reduce((a, s) => a + s.duration, 0)}s</div>
             </div>
               {scenes.length === 0 ? (
                 <p className="text-sm text-slate-600">No scenes yet. Add scenes to outline your video structure.</p>
               ) : (
                 <div className="space-y-3">
-                  {scenes.map((scene, index) => (
-                    <div
-                      key={scene.id}
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggedSceneId(scene.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDropTargetIndex(index);
-                      }}
-                      onDrop={() => {
-                        if (draggedSceneId && dropTargetIndex !== null) {
-                          const fromIndex = scenes.findIndex(s => s.id === draggedSceneId);
-                          if (fromIndex !== -1 && fromIndex !== dropTargetIndex) {
-                            moveScene(fromIndex, dropTargetIndex);
+                  {filteredScenes.map((scene, index) => {
+                    const actualIndex = scenes.findIndex(s => s.id === scene.id);
+                    return (
+                      <div
+                        key={scene.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedSceneId(scene.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          const actualIndex = scenes.findIndex(s => s.id === scene.id);
+                          setDropTargetIndex(actualIndex);
+                        }}
+                        onDrop={() => {
+                          if (draggedSceneId && dropTargetIndex !== null) {
+                            const fromIndex = scenes.findIndex(s => s.id === draggedSceneId);
+                            if (fromIndex !== -1 && fromIndex !== dropTargetIndex) {
+                              moveScene(fromIndex, dropTargetIndex);
+                            }
                           }
-                        }
-                        setDraggedSceneId(null);
-                        setDropTargetIndex(null);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedSceneId(null);
-                        setDropTargetIndex(null);
-                      }}
-                      className={`grid grid-cols-12 gap-3 items-center p-2 rounded border transition-colors ${selectedSceneId === scene.id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}
+                          setDraggedSceneId(null);
+                          setDropTargetIndex(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedSceneId(null);
+                          setDropTargetIndex(null);
+                        }}
+                        className={`grid grid-cols-12 gap-3 items-center p-2 rounded border transition-colors ${selectedSceneId === scene.id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}
                     >
                       <div className="col-span-1 flex items-center justify-center text-slate-400 cursor-move">⋮⋮</div>
                       <input

@@ -104,6 +104,16 @@ export function PageShell({ children, pageTitle }: PageShellProps) {
             window.dispatchEvent(evt);
             break;
           }
+          case 'undo': {
+            const evt = new CustomEvent('vg-palette-undo');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'redo': {
+            const evt = new CustomEvent('vg-palette-redo');
+            window.dispatchEvent(evt);
+            break;
+          }
           default:
             break;
         }
