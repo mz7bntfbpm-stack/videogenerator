@@ -17,6 +17,8 @@ export function VideoPlayer({ src, poster, onEnded, onTimeUpdate, autoplay = fal
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [dragging, setDragging] = useState(false);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
@@ -91,12 +93,20 @@ export function VideoPlayer({ src, poster, onEnded, onTimeUpdate, autoplay = fal
     setProgress(ratio * 100);
   };
 
-  // Scrubbing via dragging on the progress bar (pointer events)
-  // no-op placeholder for historical reference
+  // Fullscreen toggle
+  const toggleFullscreen = () => {
+    const el = videoContainerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  };
 
   return (
     <div className={`video-player ${className ?? ''}`} aria-label="Video Player">
-      <div className="video-container" style={{ background: '#000', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        <div ref={videoContainerRef} className="video-container" style={{ background: '#000', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
         <video
           ref={videoRef}
           src={src}
@@ -139,6 +149,9 @@ export function VideoPlayer({ src, poster, onEnded, onTimeUpdate, autoplay = fal
             <option value={1.5}>1.5x</option>
             <option value={2}>2x</option>
           </select>
+          <button onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'} style={{ background: 'transparent', border: '1px solid #555', color: '#fff', padding: '6px 10px', borderRadius: 6, marginLeft: 6 }}>
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          </button>
           <span style={{ color: '#fff', fontSize: 12 }}>{Math.round(progress)}%</span>
         </div>
       </div>
