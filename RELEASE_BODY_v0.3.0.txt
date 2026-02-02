@@ -1,0 +1,31 @@
+Release v0.3.0 — End-to-End Flows A-F + Flow F Health-Check
+
+Overview
+- This release delivers an end-to-end test harness across Flow A-F, production-grade PDF export, and a hardened accessibility/storyboard workflow. It adds Flow F health-check, with a CI matrix for A-F to guard against regressions.
+
+Key Highlights
+- Flow A: CSV export from the storyboard path
+- Flow B: Production-grade PDF export via pdf-lib
+- Flow C: Flow A + Flow B merged in one run
+- Flow D: Stress test with large storyboards
+- Flow E: Full end-to-end (A+B) with all exports (Pack, CSV, PDF)
+- Flow F: Health-check end-to-end for shared gating
+- Accessibility: Deepened 1.7 tests; keyboard scrubbing; ARIA live announcements
+- Playback-rate: 1.9 tests; initialization via defaultPlaybackRate; remount persistence
+- CI: GitHub Actions matrix for A-F
+
+What’s included in this release
+- PDF export production path with multi-page layout
+- CSV export and Pack export wired into dashboard
+- Flow A-F end-to-end tests (A-F)
+- Accessibility improvements and playback-rate tests
+- A release script suite for PRs and releases
+
+How to test locally
+- npm install
+- npm run dev
+- npm test
+- npm run test:e2e
+
+Notes
+- This release bumps version to 0.3.0. All tests rely on stable selectors; update selectors if you customize UI

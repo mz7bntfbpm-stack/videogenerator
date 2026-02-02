@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      - name: Run unit tests
+        run: npm test
+
+  e2e:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flow: ['a','b','c','d','e','f']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      - name: Build
+        run: npm run build
+      - name: Start Next.js server
+        run: |
+          npm run start &
+          SERVER_PID=$!
+          echo $SERVER_PID > server.pid
+        shell: bash
+      - name: Run Playwright tests for Flow ${ { matrix.flow } }
+        run: |
+          SERVER_PID=$(cat server.pid)
+          npx playwright test e2e/flow-${{ matrix.flow }}.spec.ts
+          kill $SERVER_PID
+        shell: bash
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results/**
