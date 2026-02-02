@@ -65,7 +65,6 @@ export function PageShell({ children, pageTitle }: PageShellProps) {
           case 'openUsage': window.location.href = '/usage'; break;
           case 'openAccount': window.location.href = '/account'; break;
           case 'exportPack': {
-            // Simple: trigger a synthetic click to export
             const evt = new CustomEvent('vg-palette-export-pack');
             window.dispatchEvent(evt);
             break;
@@ -77,6 +76,31 @@ export function PageShell({ children, pageTitle }: PageShellProps) {
           }
           case 'exportPromptBundle': {
             const evt = new CustomEvent('vg-palette-export-prompt-bundle');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'addScene': {
+            const evt = new CustomEvent('vg-palette-add-scene');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'deleteScene': {
+            const evt = new CustomEvent('vg-palette-delete-scene');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'duplicateScene': {
+            const evt = new CustomEvent('vg-palette-duplicate-scene');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'autoGenerate': {
+            const evt = new CustomEvent('vg-palette-auto-generate');
+            window.dispatchEvent(evt);
+            break;
+          }
+          case 'createVideo': {
+            const evt = new CustomEvent('vg-palette-create-video');
             window.dispatchEvent(evt);
             break;
           }

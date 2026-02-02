@@ -111,7 +111,11 @@ export default function DashboardPage() {
 
   // Storyboard (crazy feature) state
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [timelineResizing, setTimelineResizing] = useState<{ id: string; initialDuration: number; startX: number } | null>(null);
+  const [draggedSceneId, setDraggedSceneId] = useState<string | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  
   const addScene = () => {
     const s: Scene = {
       id: 'scene-' + Date.now(),
@@ -121,10 +125,37 @@ export default function DashboardPage() {
       transition: 'Fade',
     };
     setScenes(prev => [...prev, s]);
+    setSelectedSceneId(s.id);
   };
+  
+  const deleteScene = (id: string) => {
+    setScenes(prev => prev.filter(s => s.id !== id));
+    if (selectedSceneId === id) setSelectedSceneId(null);
+  };
+  
+  const duplicateScene = (id: string) => {
+    const sceneToDuplicate = scenes.find(s => s.id === id);
+    if (!sceneToDuplicate) return;
+    const index = scenes.findIndex(s => s.id === id);
+    const newScene: Scene = {
+      ...sceneToDuplicate,
+      id: 'scene-' + Date.now(),
+      title: sceneToDuplicate.title ? sceneToDuplicate.title + ' (Copy)' : '',
+    };
+    setScenes(prev => [...prev.slice(0, index + 1), newScene, ...prev.slice(index + 1)]);
+  };
+  
   const updateScene = (id: string, patch: Partial<Scene>) => {
     setScenes(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
   };
+  
+  const moveScene = (fromIndex: number, toIndex: number) => {
+    const newScenes = [...scenes];
+    const [removed] = newScenes.splice(fromIndex, 1);
+    newScenes.splice(toIndex, 0, removed);
+    setScenes(newScenes);
+  };
+  
   const totalStoryboardDuration = scenes.reduce((acc, s) => acc + (s.duration || 0), 0);
 
   const onAutoGenerate = async () => {
@@ -159,6 +190,38 @@ export default function DashboardPage() {
       window.removeEventListener('mouseup', onUp);
     };
   }, [timelineResizing]);
+
+  // Custom event listeners for command palette
+  useEffect(() => {
+    const handleAddScene = () => addScene();
+    const handleDeleteScene = () => {
+      if (selectedSceneId) deleteScene(selectedSceneId);
+      else showToast('No scene selected', 'warning');
+    };
+    const handleDuplicateScene = () => {
+      if (selectedSceneId) duplicateScene(selectedSceneId);
+      else showToast('No scene selected', 'warning');
+    };
+    const handleAutoGenerate = () => onAutoGenerate();
+    const handleCreateVideo = () => {
+      setFormData({ title: 'Palette Video', prompt: 'Describe your video from palette', styleId: 'clean-motion', aspectRatio: '16:9', duration: 30 });
+      showToast('Form pre-filled', 'success');
+    };
+
+    window.addEventListener('vg-palette-add-scene', handleAddScene);
+    window.addEventListener('vg-palette-delete-scene', handleDeleteScene);
+    window.addEventListener('vg-palette-duplicate-scene', handleDuplicateScene);
+    window.addEventListener('vg-palette-auto-generate', handleAutoGenerate);
+    window.addEventListener('vg-palette-create-video', handleCreateVideo);
+
+    return () => {
+      window.removeEventListener('vg-palette-add-scene', handleAddScene);
+      window.removeEventListener('vg-palette-delete-scene', handleDeleteScene);
+      window.removeEventListener('vg-palette-duplicate-scene', handleDuplicateScene);
+      window.removeEventListener('vg-palette-auto-generate', handleAutoGenerate);
+      window.removeEventListener('vg-palette-create-video', handleCreateVideo);
+    };
+  }, [selectedSceneId]);
 
   // Toast hook
   const { showToast } = useToast();
@@ -243,11 +306,6 @@ export default function DashboardPage() {
         break;
       }
       case 'publishAll': publishAllFromPalette(); break;
-      case 'createVideo': {
-        // Pre-fill a sample video form
-        setFormData({ title: 'Palette Video', prompt: 'Describe your video from palette', styleId: 'clean-motion', aspectRatio: '16:9', duration: 30 });
-        break;
-      }
       default: break;
     }
   };
@@ -336,7 +394,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-semibold text-slate-900">Storyboard Timeline</h2>
                 <div className="flex items-center gap-2">
                   <Button onClick={addScene}>Add Scene</Button>
-                  <Button variant="secondary" onClick={onAutoGenerate}>Auto-Generate Scenes</Button>
+                  <Button variant="secondary" onClick={onAutoGenerate}>Auto-Generate</Button>
                 </div>
               </div>
               <div className="timeline" style={{ overflowX: 'auto' }} aria-label="Storyboard timeline">
@@ -370,22 +428,94 @@ export default function DashboardPage() {
                 <p className="text-sm text-slate-600">No scenes yet. Add scenes to outline your video structure.</p>
               ) : (
                 <div className="space-y-3">
-                  {scenes.map((scene) => (
-                    <div key={scene.id} className="grid grid-cols-4 gap-3 items-center">
-                      <input className="border rounded px-2 py-1" placeholder="Scene title" value={scene.title} onChange={(e)=>updateScene(scene.id, { title: e.target.value })} />
-                      <input className="border rounded px-2 py-1" type="number" value={scene.duration} onChange={(e)=>updateScene(scene.id, { duration: Number(e.target.value) })} />
-                      <select className="border rounded px-2 py-1" value={scene.transition} onChange={(e)=>updateScene(scene.id, { transition: e.target.value })}>
+                  {scenes.map((scene, index) => (
+                    <div
+                      key={scene.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedSceneId(scene.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDropTargetIndex(index);
+                      }}
+                      onDrop={() => {
+                        if (draggedSceneId && dropTargetIndex !== null) {
+                          const fromIndex = scenes.findIndex(s => s.id === draggedSceneId);
+                          if (fromIndex !== -1 && fromIndex !== dropTargetIndex) {
+                            moveScene(fromIndex, dropTargetIndex);
+                          }
+                        }
+                        setDraggedSceneId(null);
+                        setDropTargetIndex(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedSceneId(null);
+                        setDropTargetIndex(null);
+                      }}
+                      className={`grid grid-cols-12 gap-3 items-center p-2 rounded border transition-colors ${selectedSceneId === scene.id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}
+                    >
+                      <div className="col-span-1 flex items-center justify-center text-slate-400 cursor-move">⋮⋮</div>
+                      <input
+                        className="col-span-3 border rounded px-2 py-1 bg-white"
+                        placeholder="Scene title"
+                        value={scene.title}
+                        onClick={() => setSelectedSceneId(scene.id)}
+                        onChange={(e)=>updateScene(scene.id, { title: e.target.value })}
+                      />
+                      <input
+                        className="col-span-1 border rounded px-2 py-1 bg-white"
+                        type="number"
+                        value={scene.duration}
+                        onClick={() => setSelectedSceneId(scene.id)}
+                        onChange={(e)=>updateScene(scene.id, { duration: Number(e.target.value) })}
+                      />
+                      <select
+                        className="col-span-2 border rounded px-2 py-1 bg-white"
+                        value={scene.transition}
+                        onClick={() => setSelectedSceneId(scene.id)}
+                        onChange={(e)=>updateScene(scene.id, { transition: e.target.value })}
+                      >
                         <option>Fade</option><option>Slide</option><option>Wipe</option>
                       </select>
-                      <input className="border rounded px-2 py-1" placeholder="Prompt" value={scene.prompt} onChange={(e)=>updateScene(scene.id, { prompt: e.target.value })} />
+                      <input
+                        className="col-span-4 border rounded px-2 py-1 bg-white"
+                        placeholder="Prompt"
+                        value={scene.prompt}
+                        onClick={() => setSelectedSceneId(scene.id)}
+                        onChange={(e)=>updateScene(scene.id, { prompt: e.target.value })}
+                      />
+                      <div className="col-span-1 flex items-center gap-1">
+                        <button
+                          onClick={() => duplicateScene(scene.id)}
+                          className="p-1 text-slate-500 hover:text-indigo-600 transition-colors"
+                          title="Duplicate scene"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                        <button
+                          onClick={() => deleteScene(scene.id)}
+                          className="p-1 text-slate-500 hover:text-red-600 transition-colors"
+                          title="Delete scene"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="mt-4"><Timeline scenes={scenes.map(s => ({ id: s.id, title: s.title || 'Scene', duration: s.duration, color: '#dbeafe' }))} /></div>
+              <div className="mt-4"><Timeline scenes={scenes.map(s => ({ id: s.id, title: s.title || 'Scene', duration: s.duration, color: '#dbeafe' }))} activeIndex={scenes.findIndex(s => s.id === selectedSceneId)} /></div>
               <div className="mt-3 text-sm text-slate-600">Total storyboard duration: {totalStoryboardDuration}s</div>
-              <div className="mt-4">
+              <div className="mt-4 flex gap-2">
                 <Button onClick={exportPack}>Export Pack</Button>
+                {selectedSceneId && (
+                  <div className="flex gap-2 ml-auto">
+                    <Button variant="secondary" size="sm" onClick={() => duplicateScene(selectedSceneId)}>Duplicate Scene</Button>
+                    <Button variant="danger" size="sm" onClick={() => deleteScene(selectedSceneId)}>Delete Scene</Button>
+                  </div>
+                )}
               </div>
             </div>
 
