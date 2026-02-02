@@ -1,0 +1,221 @@
+{
+  "product": "VideoGenerator",
+  "planVersion": "1.0.0",
+  "createdAt": "2026-02-02",
+  "executiveSummary": "AI-powered video creation platform with marketing site + authenticated app. Core value: fast prompt-to-video for modern storytellers.",
+  "scope": {
+    "marketingPages": ["index"],
+    "authenticatedPages": ["dashboard", "my-videos", "templates", "usage", "account"],
+    "sharedShell": ["topNav", "mobileMenu", "authPopups"],
+    "dataModels": ["User", "Video", "Template", "Style"],
+    "statusValues": ["Queued", "Processing", "Completed", "Failed"]
+  },
+  "phases": [
+    {
+      "id": "P1",
+      "name": "Scoping & Blueprint",
+      "durationDays": 2,
+      "owner": "Architect",
+      "outputs": ["Route Map", "Component Map Outline", "Data Contracts Draft"],
+      "tasks": ["Define routes", "Draft component hierarchy", "Sketch data models"]
+    },
+    {
+      "id": "P2",
+      "name": "Shell & Routing",
+      "durationDays": 3,
+      "owner": "Frontend Lead",
+      "outputs": ["TopNav", "MobileMenu", "AuthModalContainer", "PageShell", "Route Config"],
+      "tasks": ["Implement global navigation", "Build auth modals", "Create layout wrappers", "Configure routes"]
+    },
+    {
+      "id": "P3",
+      "name": "UI Baukasten",
+      "durationDays": 4,
+      "owner": "UI Engineer",
+      "outputs": ["Card", "Button", "Input", "Select", "Badge", "Modal", "Grid", "Design Tokens"],
+      "tasks": ["Build base components", "Define design tokens", "Create component library"]
+    },
+    {
+      "id": "P4",
+      "name": "Data Models & Mock APIs",
+      "durationDays": 2,
+      "owner": "Full Stack",
+      "outputs": ["TypeScript Interfaces", "Mock API Hooks", "Swagger-like Contracts"],
+      "tasks": ["Define User/Video/Template models", "Create mock data", "Build API hooks"]
+    },
+    {
+      "id": "P5",
+      "name": "MVP Layouts",
+      "durationDays": 12,
+      "owner": "Frontend Team",
+      "outputs": ["Index Page", "Dashboard", "My Videos", "Templates", "Usage", "Account"],
+      "tasks": [
+        {"page": "Index", "components": ["HeroSection", "SampleVideoPanel", "StepsSection", "FeatureTiles", "ExampleVideosSection", "WorkflowSection", "TestimonialSection", "SnapshotSection", "FAQAccordion", "FinalCTA"]},
+        {"page": "Dashboard", "components": ["CreateVideoPanel", "RecentVideos", "UsageOverview", "QuickTemplates", "VideoDetailsModal", "CreateFromTemplateModal"]},
+        {"page": "My Videos", "components": ["FiltersBar", "VideoList", "VideoDetailsModal", "DuplicateAndEditModal", "DeleteVideoModal"]},
+        {"page": "Templates", "components": ["TopControlsBar", "TemplatesList", "CreateTemplateModal", "EditTemplateModal", "DeleteTemplateModal", "CreateVideoFromTemplateModal"]},
+        {"page": "Usage", "components": ["SummaryStatistics", "RecentActivity", "UsageBreakdowns", "QuickActions"]},
+        {"page": "Account", "components": ["ProfileSection", "SecuritySection", "YourDataSection", "DangerZone", "QuickLinks", "ChangePasswordModal", "DeleteAccountModal"]}
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "Polish & Accessibility",
+      "durationDays": 3,
+      "owner": "UI Engineer",
+      "outputs": ["Keyboard Navigation", "ARIA Attributes", "Focus Management", "Performance Optimization"],
+      "tasks": ["Implement focus traps", "Add ARIA labels", "Optimize loading states", "Test keyboard nav"]
+    },
+    {
+      "id": "P7",
+      "name": "Export & Documentation",
+      "durationDays": 1,
+      "owner": "Tech Lead",
+      "outputs": ["PLAN.JSON", "PLAN.PDF-Outline", "Architecture Docs"],
+      "tasks": ["Generate export files", "Document decisions", "Create README"]
+    }
+  ],
+  "highImpactTasks": [
+    {"id": "HIT1", "name": "Global Shell Blueprint", "phase": "P1", "impact": "high", "description": "Unified TopNav + MobileMenu + AuthModalContainer"},
+    {"id": "HIT2", "name": "Route Map & Layout Skeletons", "phase": "P2", "impact": "high", "description": "Define /, /dashboard, /my-videos, /templates, /usage, /account"},
+    {"id": "HIT3", "name": "UI Component Library", "phase": "P3", "impact": "high", "description": "Card, Button, Input, Select, Badge, Modal, Grid + Tokens"},
+    {"id": "HIT4", "name": "Data Models & API Contracts", "phase": "P4", "impact": "high", "description": "User, Video, Template, Style + Mock APIs"},
+    {"id": "HIT5", "name": "Index Page MVP", "phase": "P5", "impact": "high", "description": "Hero → Steps → Features → Examples → Workflow → FAQ → CTA"},
+    {"id": "HIT6", "name": "Dashboard MVP", "phase": "P5", "impact": "high", "description": "Create Video Panel + Recent Videos + Usage + Templates"},
+    {"id": "HIT7", "name": "My Videos MVP", "phase": "P5", "impact": "medium", "description": "Filter bar + Video list + CRUD modals"},
+    {"id": "HIT8", "name": "Templates MVP", "phase": "P5", "impact": "medium", "description": "Template CRUD + Create Video from Template"},
+    {"id": "HIT9", "name": "Usage MVP", "phase": "P5", "impact": "medium", "description": "Statistics + Breakdowns + Quick Actions"},
+    {"id": "HIT10", "name": "Account MVP", "phase": "P5", "impact": "medium", "description": "Profile + Security + Danger Zone + Modals"}
+  ],
+  "componentMap": {
+    "globalShell": {
+      "TopNav": {"props": ["links", "brand", "activeLink", "onLogin", "onSignUp", "onLogOut"]},
+      "MobileMenu": {"props": ["isOpen", "onClose", "links"]},
+      "AuthModalContainer": {"props": ["isOpen", "onClose", "toggleToOtherModal"], "children": ["LoginModal", "SignUpModal"]},
+      "PageShell": {"props": ["children", "pageTitle"]}
+    },
+    "pages": {
+      "index": {
+        "HeroSection": {"props": ["headline", "subcopy", "CTAs"]},
+        "SampleVideoPanel": {"props": ["prompt", "title", "style", "aspectRatio", "duration", "onGenerate"]},
+        "StepsSection": {"props": ["steps"]},
+        "FeatureTiles": {"props": ["features"]},
+        "ExampleVideosSection": {"props": ["examples"]},
+        "WorkflowSection": {"props": ["headings", "paragraphs"]},
+        "TestimonialSection": {"props": ["quote", "author"]},
+        "SnapshotSection": {"props": ["stats"]},
+        "FAQAccordion": {"props": ["items"]},
+        "FinalCTA": {"props": ["headline", "CTAs"]}
+      },
+      "dashboard": {
+        "CreateVideoPanel": {"props": ["onSubmit", "validationMessage"]},
+        "RecentVideos": {"props": ["videos"]},
+        "UsageOverview": {"props": ["stats"]},
+        "QuickTemplates": {"props": ["templates", "onUse"]},
+        "VideoDetailsModal": {"props": ["video", "onClose", "actions"]},
+        "CreateFromTemplateModal": {"props": ["template", "onSubmit"]}
+      },
+      "myVideos": {
+        "FiltersBar": {"props": ["filters", "onApply"]},
+        "VideoList": {"props": ["videos", "onView", "onDownload"]},
+        "VideoDetailsModal": {"props": ["video", "onClose", "actions"]},
+        "DuplicateAndEditModal": {"props": ["video", "onSubmit"]},
+        "DeleteVideoModal": {"props": ["video", "onConfirm"]}
+      },
+      "templates": {
+        "TopControlsBar": {"props": ["onNew", "onSearch", "onFilter"]},
+        "TemplatesList": {"props": ["templates", "onUse", "onEdit", "onDelete"]},
+        "CreateTemplateModal": {"props": ["onSubmit"]},
+        "EditTemplateModal": {"props": ["template", "onSave"]},
+        "DeleteTemplateModal": {"props": ["template", "onConfirm"]},
+        "CreateVideoFromTemplateModal": {"props": ["template", "onSubmit"]}
+      },
+      "usage": {
+        "SummaryStatistics": {"props": ["stats"]},
+        "RecentActivity": {"props": ["activity"]},
+        "UsageBreakdowns": {"props": ["byStyle", "byAspect"]},
+        "QuickActions": {"props": ["actions"]}
+      },
+      "account": {
+        "ProfileSection": {"props": ["email", "displayName", "onSave"]},
+        "SecuritySection": {"props": ["onChangePassword"]},
+        "YourDataSection": {"props": ["description"]},
+        "DangerZone": {"props": ["onDeleteAccount"]},
+        "QuickLinks": {"props": ["links"]},
+        "ChangePasswordModal": {"props": ["onSubmit"]},
+        "DeleteAccountModal": {"props": ["onConfirm"]}
+      }
+    }
+  },
+  "routeMap": {
+    "/": {"page": "index", "layout": "PageShell"},
+    "/dashboard": {"page": "dashboard", "layout": "PageShell"},
+    "/my-videos": {"page": "myVideos", "layout": "PageShell"},
+    "/templates": {"page": "templates", "layout": "PageShell"},
+    "/usage": {"page": "usage", "layout": "PageShell"},
+    "/account": {"page": "account", "layout": "PageShell"}
+  },
+  "dataModels": {
+    "User": {
+      "id": "string",
+      "email": "string",
+      "displayName": "string",
+      "avatar": "string?",
+      "preferences": "object?"
+    },
+    "Video": {
+      "id": "string",
+      "title": "string",
+      "prompt": "string",
+      "styleId": "string",
+      "aspectRatio": "string",
+      "duration": "number",
+      "status": "Queued|Processing|Completed|Failed",
+      "createdAt": "string",
+      "updatedAt": "string",
+      "fileUrl": "string?",
+      "templateId": "string?"
+    },
+    "Template": {
+      "id": "string",
+      "title": "string",
+      "basePrompt": "string",
+      "defaultStyle": "string",
+      "defaultAspectRatio": "string",
+      "defaultDuration": "number"
+    },
+    "Style": {
+      "id": "string",
+      "name": "string",
+      "colorToken": "string"
+    }
+  },
+  "techStack": {
+    "framework": "Next.js 14+ (App Router)",
+    "language": "TypeScript",
+    "styling": "CSS Modules + Design Tokens",
+    "stateManagement": "React Context + Hooks",
+    "routing": "Next.js App Router"
+  },
+  "accessibility": {
+    "requirements": ["WCAG 2.1 AA", "Keyboard Navigation", "Focus Management", "ARIA Labels"],
+    "modals": ["Focus trap", "Escape to close", "Click outside to close"]
+  },
+  "exportFormats": {
+    "JSON": "PLAN.JSON",
+    "PDF": "PLAN.md (convertible to PDF)"
+  },
+  "risks": [
+    {"risk": "Unclear tech stack decisions", "mitigation": "Quick decision session with lead architect in P1"},
+    {"risk": "Overcomplex UI architecture", "mitigation": "Focus on global shell + component library; prioritize MVP"},
+    {"risk": "Insufficient data contracts", "mitigation": "Define interfaces + mock APIs in P4"},
+    {"risk": "Accessibility failures", "mitigation": "A11y checklists from P2, regular checks"}
+  ],
+  "kpis": [
+    "All pages render within global shell",
+    "Auth modals accessible from any route",
+    "100% reusable UI component library",
+    "Mock APIs ready for data integration",
+    "Zero accessibility violations (WCAG 2.1 AA)"
+  ]
+}
