@@ -1,0 +1,28 @@
+Release v0.3.0: End-to-End Flows A-F + Flow F Health-Check
+
+Summary
+- End-to-end coverage across Flow A-F implemented; production-grade PDF export; a healthy CI gating; new Flow F health-check included. Flow A–F exercise the full storyboard-to-exports pipeline, plus a stress test and a health-check pass.
+
+Highlights
+- End-to-End Flows A-F: Flow A (CSV), Flow B (PDF), Flow C (A+B), Flow D (stress), Flow E (A+B full end-to-end), Flow F (health-check)
+- PDF export: Production-grade PDF generation via pdf-lib, multi-page formatting
+- CSV export: Stable data export of storyboard scenes
+- Pack export: JSON export of videos/templates
+- Accessibility: Deepened 1.7 tests; keyboard scrubbing; ARIA live announcements
+- Playback-rate: 1.9 tests; initialization via defaultPlaybackRate; remount persistence
+- CI: GitHub Actions workflow; unit tests + end-to-end matrix for A-F
+
+How to test locally
+- npm install
+- npm run dev
+- npm test
+- npm run test:e2e
+
+Release notes
+- See RELEASE_NOTES.md for the detailed narrative
+- CHANGELOG.md has v0.3.0 entry
+
+Notes
+- Version bumped to 0.3.0
+- No breaking changes expected; selectors are data-testid‑driven for stability
+- Flow F health-check is included in the CI matrix

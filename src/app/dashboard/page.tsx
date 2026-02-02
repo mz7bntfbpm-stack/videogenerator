@@ -11,6 +11,8 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { Timeline } from '@/components/ui/Timeline';
+import { scenesToCSV } from '@/utils/export';
+import { generatePDF, downloadPDFFromBytes } from '@/utils/export-pdf';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { getCurrentStoryboard, setCurrentStoryboard } from '@/lib/storyboardStore';
 import { useToast } from '@/lib/toast';
@@ -336,6 +338,16 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   };
 
+  // CSV export function already defined above
+
+  const exportPDF = async () => {
+    const rows = scenes.map((s) => ({ id: s.id, title: s.title, prompt: s.prompt, duration: s.duration, transition: s.transition }));
+    const bytes = await generatePDF(rows as any);
+    downloadPDFFromBytes(bytes, 'VideoGenerator_Scenes.pdf');
+  };
+
+  // CSV export function defined above
+
   const publishAllFromPalette = async () => {
     const scenes = getCurrentStoryboard();
     if (!scenes.length) {
@@ -602,6 +614,8 @@ export default function DashboardPage() {
               <div className="mt-3 text-sm text-slate-600">Total storyboard duration: {totalStoryboardDuration}s</div>
               <div className="mt-4 flex gap-2">
                 <Button onClick={exportPack}>Export Pack</Button>
+                <Button onClick={exportCSV} style={{ marginLeft: 8 }}>Export CSV</Button>
+                <Button onClick={exportPDF} style={{ marginLeft: 8 }}>Export PDF</Button>
                 {selectedSceneId && (
                   <div className="flex gap-2 ml-auto">
                     <Button variant="secondary" size="sm" onClick={() => duplicateScene(selectedSceneId)}>Duplicate Scene</Button>
