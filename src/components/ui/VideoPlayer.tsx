@@ -14,6 +14,7 @@ export function VideoPlayer({ src, poster, onEnded, onTimeUpdate, autoplay = fal
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [dragging, setDragging] = useState(false);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
   const [duration, setDuration] = useState(0);
@@ -116,10 +117,28 @@ export function VideoPlayer({ src, poster, onEnded, onTimeUpdate, autoplay = fal
             if (videoRef.current && duration > 0) videoRef.current.currentTime = ratio * duration;
             setProgress(ratio * 100);
             setDragging(true);
-            try { (e as any).currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+            try { (e.currentTarget as any).setPointerCapture?.(e.pointerId); } catch {}
           }} onPointerMove={(e)=>{ if (dragging){/* handled by global pointermove listener */}}} style={{ flex: 1, height: 8, background: '#555', borderRadius: 4, position: 'relative', cursor: 'pointer' }} aria-label="Seek bar" role="slider" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
             <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${progress}%`, background: '#4f46e5', borderRadius: 4 }} />
           </div>
+          {/* Playback speed control */}
+          <select
+            aria-label="Playback rate"
+            value={playbackRate}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setPlaybackRate(v);
+              if (videoRef.current) videoRef.current.playbackRate = v;
+            }}
+            style={{ background: '#111', color: '#fff', border: '1px solid #555', borderRadius: 6, padding: '6px 8px' }}
+          >
+            <option value={0.5}>0.5x</option>
+            <option value={0.75}>0.75x</option>
+            <option value={1}>1x</option>
+            <option value={1.25}>1.25x</option>
+            <option value={1.5}>1.5x</option>
+            <option value={2}>2x</option>
+          </select>
           <span style={{ color: '#fff', fontSize: 12 }}>{Math.round(progress)}%</span>
         </div>
       </div>
